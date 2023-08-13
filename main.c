@@ -1,168 +1,104 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
-/* signal handler function for interrupt signal */
-void sig_handler(int signal);
-/* execute a command within a child process */
-int execute(char **args, char **front);
+#include <fcntl.h>
 
 /**
- * signal_handler - Responds to an interrupt signal by displaying
- * a new prompt
- * sig: The signal identifier
+ * main - check the code
+ *
+ * Return: Success
  */
-void sig_handler(int signal)
+int main(void)
 {
-	char *new_prompt = "\n$ ";
+	char prompt[] = "simple_shell$ ";
 
-	/* ignore the signal parameter to prevent complier warnings */
-	(void)signal;
+	char command[MAX_COMMAND_LENGTH];
 
-	/* reassign the signal handler for SIGNIT */
-	signal(SIGINT, sig_handler);
+	while (1)
+	{
+	int prompt_length = sizeof(prompt) - 1;
 
-	/* write the new prompt to the standard output */
-	write(STDIN_FILENO, new_prompt, 3);
+	write(STDOUT_FILENO, prompt, prompt_length);
+
+	ssize_t bytes_read = read(STDIN_FILENO, command, sizeof(command));
+
+	if (bytes_read <= 0)
+	{
+		/* end of file or error */
+		break;
+	}
+
+	/* remove the newline character from the command */
+	if (command[bytes_read - 1] == '\n')
+	{
+		command[bytes_read - 1] = '\0';
+	}
+
+	pid_t child_pid = fork();
+
+	if (child_pid == -1)
+	{
+		char error[] = "Error: Fork failed\n";
+
+		write(STDERR_FILENO, error, sizeof(error) - 1)
+	}
+	else if (child_pid == 0)
+	{
+		/* child process */
+		char *args[] = { command, NULL };
+
+		if (execve(command, args, NULL) == -1)
+		{
+			char error[] = "Error: Executable not found\n";
+
+			write(STDERR_FILENO, error, sizeof(exec_error) - 1);
+			_exit(EXIT_FAILURE);
+		}
+	} else
+	{
+		/* parent process */
+		int status;
+
+		waitpid(child_pid, &status, 0);
+	}
+	}
+	return (0);
 }
 
 /**
- * execute - launches a command in a child process
- * @args: an array containig the command and its arguments
- * @front: a double pointer indicating the start of an args
- * Return: if an error happens - a relevant error code
- * otherwise - the exit status of the most recently executed command
+ * append_text_to_file - specified text to end of file
+ * @filename: pointer to the target file
+ * @text_content: string to be added to end of file
+ *
+ * Return: return 1
  */
-int execute(char **args, char **front)
+int append_text_to_file(const char *filename, char *text_content)
 {
-	pid_t child_pid;
-	int status, flag = 0, ret = 0;
-	char *command = args[0];
+	int file_descriptor, write_result, text_length = 0;
 
-	/* check if the command is not an absolute or relative path */
-	if (command[0] != '/' && command[0] != '.')
+	/*check if the filename is NULL */
+	if (filename == NULL)
+		return (-1);
+
+	/* calculate the length */
+	if (text_content != NULL)
 	{
-		flag = 1;
-		command = get_location(command);
+		while (text_content[text_length])
+			text_length++;
 	}
 
-	/* check if the command exists ad is accessible */
-	if (!command || (access(command, F_OK) == -1))
-	{
-		if (errno == EACCES)
-			ret = (create_error(args, 126));
-		else
-			ret = (create_error(args, 127));
-	}
-	else
-	{
-		/* create a child process using fork */
-		child_pid = fork();
+	/* open the file for writing in append mode */
+	file_descriptor = open(filename, O_WRONLY | O_APPEND);
 
-		/* handle a fork error */
-		if (child_pid == -1)
-		{
-			if (flag)
-				free(command);
-			print_error("Error creating child process:");
-			return (1);
-		}
+	write_result = write(file_descriptor, text_content, text_length)
 
-		/* if this is the child process */
-		if (child_pid == 0)
-		{
+		/* check for error during opening or writing */
+		if (file_descriptor == -1 || write_result == -1)
+			return (-1);
 
-			/* execute a command within the child process */
-		       execve(command, args, environ);
-
-		       /* handle an access error */
-		       if (errno == EACCES)
-			       ret = (creat_error(args, 126));
-
-		       /* clean up resources and exit the child process */
-		       free_env();
-		       free_args(args, front);
-		       free_alias_list(aliases);
-		       _exit(ret);
-		}
-		/* if this is the parent process */
-		else
-		{
-			/* wait for the child process to complete and exit */
-			wait(&status);
-			ret = retrieve_exit_status(status);
-		}
-	}
-
-	/* clean up resources if necessary and return the result */
-	if (flag)
-		free(command);
-	return (ret);
-}
-
-/**
-* main - initiates a basic UNIX command inerpreter
-* @argc: the count of program arguments
-* @argv: an array of pointers to the progtam arguments
-* Return: the exit status of the last executed command
-*/
-int main(int argc, char *argv[])
-{
-		int ret = 0, retn;
-		int *exe_ret = &retn;
-		char *prompt = "$ ", *new_line = "\n";
-
-		/* set the program name and initialize variable */
-		name = argv[0];
-		history_count = 1;
-		aliases = NULL;
-		signal(SIGINT, sig_handler);
-
-		/* initialize the exit status pointer and copy the environment */
-		*exe_ret = 0;
-		environ = _copyenv();
-		if (!environ)
-			exit(-100);
-
-		/* if program arguments are provided */
-		if (argc != 1)
-		{
-			/* process commands from a file and set the exit status */
-			ret = proc_file_commands(argv[1], exe_ret);
-			free_env();
-			free_alias_list(aliases);
-			return (*exe_ret);
-		}
-
-		/* if the standard input is not a terminal */
-		if (!isatty(STDIN_FILENO))
-		{
-			/* continously handle commands until end of file or exit */
-			while (ret != END_OF_FILE && ret != EXIT)
-				ret = handle_args(exe_ret);
-			free_env();
-			free_alias_list(aliases);
-			return (*exe_ret);
-		}
-		 /* if interacting with a terminal, continuously prompt and handle cmds */
-		while (1)
-		{
-			write(STDOUT_FILENO, prompt, 2);
-			ret = handle_args(exe_ret);
-			if (ret == END_OF_FILE || ret == EXIT)
-			{
-				if (ret == END_OF_FILE)
-					write(STDOUT_FILENO, new_line, 1);
-				free_env();
-				free_alias_list(aliases);
-				exit(*exe_ret);
-			}
-		}
-		/* clean up resources and return the exit status */
-		free_env();
-		free_alias_list(aliases);
-		return (*exe_ret);
+	close(file_descriptor);
+	return (1);
 }
