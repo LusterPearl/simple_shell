@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -10,19 +11,19 @@
  *
  * Return: Success
  */
-int main()
+int main(void)
 {
-	char shell_prompt[] = "simple_shell$ ";
+	char prompt[] = "simple_shell$ ";
 
-	char user_command[MAX_COMMAND_LENGTH];
+	char command[MAX_COMMAND_LENGTH];
 
 	while (1)
 	{
-	int prompt_length = sizeof(shell_prompt) - 1;
+	int prompt_length = sizeof(prompt) - 1;
 
-	write(STDOUT_FILENO, shell_prompt, prompt_length);
+	write(STDOUT_FILENO, prompt, prompt_length);
 
-	ssize_t bytes_read = read(STDIN_FILENO, user_command, sizeof(user_command));
+	ssize_t bytes_read = read(STDIN_FILENO, command, sizeof(command));
 
 	if (bytes_read <= 0)
 	{
@@ -31,29 +32,29 @@ int main()
 	}
 
 	/* remove the newline character from the command */
-	if (user_command[bytes_read - 1] == '\n')
+	if (command[bytes_read - 1] == '\n')
 	{
-		user_command[bytes_read - 1] = '\0';
+		command[bytes_read - 1] = '\0';
 	}
 
 	pid_t child_pid = fork();
 
 	if (child_pid == -1)
 	{
-		char fork_error[] = "Error: Fork failed\n";
+		char error[] = "Error: Fork failed\n";
 
-		write(STDERR_FILENO, fork_error, sizeof(fork_error) - 1)
+		write(STDERR_FILENO, error, sizeof(error) - 1)
 	}
 	else if (child_pid == 0)
 	{
 		/* child process */
-		char *args[] = { user_command, NULL };
+		char *args[] = { command, NULL };
 
-		if (execve(user_command, args, NULL) == -1)
+		if (execve(command, args, NULL) == -1)
 		{
-			char exec_error[] = "Error: Executable not found\n";
+			char error[] = "Error: Executable not found\n";
 
-			write(STDERR_FILENO, exec_error, sizeof(exec_error) - 1);
+			write(STDERR_FILENO, error, sizeof(exec_error) - 1);
 			_exit(EXIT_FAILURE);
 		}
 	} else
@@ -69,10 +70,10 @@ int main()
 
 /**
  * append_text_to_file - specified text to end of file
- * @filename:pointer to the target file
- * text_content: sting to be added to end of file
+ * @filename: pointer to the target file
+ * @text_content: string to be added to end of file
  *
- * Return:
+ * Return: return 1
  */
 int append_text_to_file(const char *filename, char *text_content)
 {
