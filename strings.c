@@ -60,7 +60,7 @@ char *my_strchr(const char *str, int ch)
 	{
 		if (*str == (char)ch)
 		{
-			return (char *)str;
+			return ((char *)str);
 			/** found the character: return its address */
 		}
 		str++;
@@ -69,7 +69,7 @@ char *my_strchr(const char *str, int ch)
 	/** check if char is a null terminator */
 	if (ch == '\0')
 	{
-		return (char *)str;
+		return ((char *)str);
 	}
 	/** character not found */
 	return (NULL);
@@ -78,12 +78,12 @@ char *my_strchr(const char *str, int ch)
 /**
  * my_strtok - splits strings into tokens
  * @str: string to be tokenized
- * @delin: set of delinitter characters
+ * @delim: set of delinitter characters
  * Return: pointer to the nwxt token
  */
 char *my_strtok(char *str, const char *delim)
 {
-	static char *next_token = NULL;
+	static char *next_token;
 	char *token;
 
 	if (str != NULL)

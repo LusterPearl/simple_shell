@@ -12,7 +12,8 @@ int my_atoi(const char *str)
 	int i = 0;
 
 	/** handle keading whitespaces */
-	while (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r' || str[i] == '\v' || str[i] == '\f')
+	while (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' ||
+		str[i] == '\r' || str[i] == '\v' || str[i] == '\f')
 	{
 		i++;
 	}
@@ -39,7 +40,7 @@ int my_atoi(const char *str)
 }
 
 /**
- * is_num - checks if the string is a valud number
+ * my_is_num - checks if the string is a valud number
  * @str: to be checked
  * Return: True if its a validd number
  */
