@@ -28,7 +28,7 @@ int execute_final_command(char **argv, char **directories)
 	else if (pid == 0)
 	{
 		/** child process - exec command */
-		execve(real_command, argv, NULL);
+		execvp(real_command, argv);
 		/** execve returnung means error occured */
 		perror("execve error");
 		/** avoid at exit handlers by using _exit */

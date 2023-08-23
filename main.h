@@ -16,12 +16,17 @@
 #define PROMPT "($) "
 #define BUFFER_SIZE 1024
 
+extern char **environ;
+
 /** strings.c */
 size_t my_strlen(const char *str);
 char *my_strcpy(char *dest, const char *src);
 char *my_strchr(const char *str, int ch);
 int my_strcmp(const char *str1, const char *str2);
 char *my_strtok(char *str, const char *delim);
+
+/** strings2.c */
+int my_space(const char *str);
 
 /** strint.c */
 int my_atoi(const char *str);
